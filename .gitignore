@@ -1,0 +1,21 @@
+# Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Test reports and coverage
+.coverage
+htmlcov/
+pytest_cache/
