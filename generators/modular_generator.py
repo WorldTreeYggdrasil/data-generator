@@ -58,12 +58,25 @@ class ModularDataGenerator:
         """Generate multiple records"""
         return [self.generate_record() for _ in range(quantity)]
 
-    def to_csv(self, data: List[Dict[str, str]], file_path: str):
-        """Save generated data to CSV file"""
+    def to_csv(self, data: List[Dict[str, str]], file_path: str, fields: List[str] = None):
+        """Save generated data to CSV file with optional field filtering
+        
+        Args:
+            data: List of records to save
+            file_path: Output file path
+            fields: List of field names to include (None for all fields)
+        """
         if not data:
             raise ValueError("No data to save")
             
-        headers = list(data[0].keys())
+        # Use all fields if none specified
+        headers = fields if fields else list(data[0].keys())
+        
+        # Verify all requested fields exist in data
+        for field in headers:
+            if field not in data[0]:
+                raise ValueError(f"Field '{field}' not found in generated data")
+                
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(",".join(headers) + "\n")  # Write header
             for record in data:

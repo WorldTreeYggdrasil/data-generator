@@ -54,6 +54,38 @@ class DataGeneratorApp:
         self.quantity_entry = ttk.Entry(control_frame, width=10)
         self.quantity_entry.insert(0, "100")
         self.quantity_entry.grid(row=0, column=1, padx=5)
+
+        # Output fields selection
+        fields_frame = ttk.LabelFrame(self.root, text="Include Fields", padding=10)
+        fields_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        self.include_name = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            fields_frame,
+            text="Name",
+            variable=self.include_name
+        ).grid(row=0, column=0, padx=5, sticky="w")
+
+        self.include_surname = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            fields_frame,
+            text="Surname",
+            variable=self.include_surname
+        ).grid(row=0, column=1, padx=5, sticky="w")
+
+        self.include_id = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            fields_frame,
+            text="ID",
+            variable=self.include_id
+        ).grid(row=0, column=2, padx=5, sticky="w")
+
+        self.include_birthdate = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            fields_frame,
+            text="Birth Date",
+            variable=self.include_birthdate
+        ).grid(row=0, column=3, padx=5, sticky="w")
         
         # Generate button
         ttk.Button(
@@ -98,6 +130,21 @@ class DataGeneratorApp:
             messagebox.showerror("Error", f"Invalid quantity: {e}")
             return
             
+        # Get selected fields
+        selected_fields = []
+        if self.include_name.get():
+            selected_fields.append("Name")
+        if self.include_surname.get():
+            selected_fields.append("Surname")
+        if self.include_id.get() and hasattr(self.generator, 'id_generator'):
+            selected_fields.append("ID")
+        if self.include_birthdate.get() and hasattr(self.generator, 'id_generator'):
+            selected_fields.append("Birth Date")
+
+        if not selected_fields:
+            messagebox.showerror("Error", "No fields selected for output!")
+            return
+            
         file_path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv")],
@@ -107,8 +154,8 @@ class DataGeneratorApp:
         if file_path:
             try:
                 data = self.generator.generate_bulk(quantity)
-                self.generator.to_csv(data, file_path)
-                messagebox.showinfo("Success", f"Successfully saved {len(data)} records!")
+                self.generator.to_csv(data, file_path, fields=selected_fields)
+                messagebox.showinfo("Success", f"Successfully saved {len(data)} records with fields: {', '.join(selected_fields)}")
             except Exception as e:
                 self.logger.error(f"Error generating data: {e}")
                 messagebox.showerror("Error", f"Failed to generate data: {e}")
