@@ -25,17 +25,32 @@ class ModularDataGenerator:
             return None
 
     def generate_record(self) -> Dict[str, str]:
-        """Generate a single record using available data types"""
+        """Generate a single record with locale-aware name/surname matching"""
         record = {}
-        for data_type, values in self.data_types.items():
-            if values:  # Only include if we have data
-                record[data_type] = random.choice(values)
+        is_female = random.choice([True, False])
         
-        # Add ID number if generator available
+        # Handle name selection
+        if is_female:
+            record["Name"] = random.choice(self.data_types.get("ImionaZenskie", []))
+        else:
+            record["Name"] = random.choice(self.data_types.get("ImionaMeskie", []))
+            
+        # Handle surname selection based on locale
+        if self.locale == "de":
+            # German uses combined surnames
+            record["Surname"] = random.choice(self.data_types.get("Nazwiska", []))
+        else:
+            # Polish uses gender-specific surnames
+            if is_female:
+                record["Surname"] = random.choice(self.data_types.get("NazwiskaZenskie", []))
+            else:
+                record["Surname"] = random.choice(self.data_types.get("NazwiskaMeskie", []))
+        
+        # Add ID number and birth date if generator available
         if self.id_generator:
             id_number, birth_date = self.id_generator.generate_id_number()
-            record["id_number"] = id_number
-            record["birth_date"] = birth_date
+            record["ID"] = id_number
+            record["Birth Date"] = birth_date
             
         return record
 
