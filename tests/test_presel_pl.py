@@ -1,6 +1,6 @@
 import pytest
 from generators.id_generators.pesel_pl import generate_pesel
-from generators.base_generator import PersonalDataGeneratorBase
+from generators.modular_generator import ModularDataGenerator
 
 def test_generate_pesel():
     pesel, birth_date = generate_pesel(2000, 5, 15, "M")
@@ -59,21 +59,16 @@ def test_generate_pesel_control_digit():
     assert int(pesel[-1]) == control_digit, "Control digit should be valid"
 
 def test_personal_data_generator():
-    generator = PersonalDataGeneratorBase(locale="pl")
+    generator = ModularDataGenerator(locale="pl")
     data = generator.generate_bulk(5)
 
     assert len(data) == 5, "Should generate exactly 5 records"
-    for entry in data:
-        parts = entry.split(",")
-        assert len(parts) >= 5, "Entry should have at least 5 comma-separated parts"
-        
-        first_name, surname, gender, birth_date, pesel = parts[:5]
-        
-        assert first_name, "First name should not be empty"
-        assert surname, "Surname should not be empty"
-        assert gender in ("M", "K"), "Gender should be M or K"
-        assert birth_date.count("-") == 2, "Birth date should be in YYYY-MM-DD format"
-        assert len(pesel) == 11 and pesel.isdigit(), "PESEL should be 11 digits"
+    for record in data:
+        assert "ImionaMeskie" in record or "ImionaZenskie" in record, "Should contain first name"
+        assert "NazwiskaMeskie" in record or "NazwiskaZenskie" in record, "Should contain surname"
+        assert "id_number" in record, "Should contain ID number"
+        assert "birth_date" in record, "Should contain birth date"
+        assert len(record["id_number"]) == 11 and record["id_number"].isdigit(), "PESEL should be 11 digits"
 
 def test_pesel_with_random_params():
     pesel, birth_date = generate_pesel()

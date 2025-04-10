@@ -1,64 +1,117 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from generators.base_generator import PersonalDataGeneratorBase
-from generators.dialog import QuantityDialog
+from generators.modular_generator import ModularDataGenerator
+from generators.data_loader import DataLoader
+import logging
+import os
 
-
-#TODO: Add a proper docstring for the module,
-#TODO: Think about locale logic, pretty up user interface
 class DataGeneratorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Data Generator")
-        self.root.geometry("400x300")
-
-        # Default locale
-        self.selected_locale = tk.StringVar(value="pl")
-
-        # Initialize generators dynamically
-        self.generator = PersonalDataGeneratorBase(self.selected_locale.get())
-
-        # Create UI elements
-        self.create_buttons()
-        self.create_locale_selector()
-
-    def create_buttons(self):
-        self.generate_btn = ttk.Button(
-            self.root,
-            text="Generate Data",
+        self.root.geometry("600x400")
+        
+        # Configure logging
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
+        
+        # Initialize data loader
+        base_data_path = os.path.join(os.path.dirname(__file__), "data")
+        self.data_loader = DataLoader(base_data_path)
+        
+        # Discover available locales
+        self.locales = self.data_loader.discover_locales()
+        if not self.locales:
+            messagebox.showerror("Error", "No data locales found!")
+            return
+            
+        # Initialize UI
+        self.selected_locale = tk.StringVar(value=self.locales[0])
+        self.generator = None
+        self.create_ui()
+        
+    def create_ui(self):
+        """Create dynamic UI based on available locales"""
+        # Locale selection
+        locale_frame = ttk.LabelFrame(self.root, text="Select Locale", padding=10)
+        locale_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        for i, locale in enumerate(self.locales):
+            ttk.Radiobutton(
+                locale_frame,
+                text=locale.upper(),
+                variable=self.selected_locale,
+                value=locale,
+                command=self.change_locale
+            ).grid(row=0, column=i, padx=5)
+            
+        # Data generation controls
+        control_frame = ttk.LabelFrame(self.root, text="Generate Data", padding=10)
+        control_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        # Quantity entry
+        ttk.Label(control_frame, text="Number of records:").grid(row=0, column=0, padx=5)
+        self.quantity_entry = ttk.Entry(control_frame, width=10)
+        self.quantity_entry.insert(0, "100")
+        self.quantity_entry.grid(row=0, column=1, padx=5)
+        
+        # Generate button
+        ttk.Button(
+            control_frame,
+            text="Generate",
             command=self.on_generate_data
-        )
-        self.generate_btn.pack(pady=10)
-
-    def create_locale_selector(self):
-        locales = ["pl", "de", "uk"]
-        self.locale_menu = ttk.OptionMenu(
-            self.root, self.selected_locale, *locales, command=self.change_locale
-        )
-        self.locale_menu.pack(pady=10)
-
-    def change_locale(self, locale):
-        self.generator = PersonalDataGeneratorBase(locale)
-
+        ).grid(row=0, column=2, padx=5)
+        
+        # Status bar
+        self.status_var = tk.StringVar()
+        ttk.Label(
+            self.root,
+            textvariable=self.status_var,
+            relief=tk.SUNKEN
+        ).pack(fill=tk.X, side=tk.BOTTOM)
+        
+        # Initialize generator for default locale
+        self.change_locale()
+        
+    def change_locale(self, *args):
+        """Change the current locale and update generator"""
+        locale = self.selected_locale.get()
+        try:
+            self.generator = ModularDataGenerator(locale)
+            self.status_var.set(f"Loaded locale: {locale}")
+        except Exception as e:
+            self.logger.error(f"Error loading locale {locale}: {e}")
+            messagebox.showerror("Error", f"Failed to load locale {locale}")
+            
     def on_generate_data(self):
-        quantity_dialog = QuantityDialog(self.root)
-        self.root.wait_window(quantity_dialog)
-
-        if quantity_dialog.quantity:
-            file_path = filedialog.asksaveasfilename(
+        """Handle generate data button click"""
+        if not self.generator:
+            messagebox.showerror("Error", "No generator initialized!")
+            return
+            
+        # Get and validate quantity
+        try:
+            quantity = int(self.quantity_entry.get())
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive")
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid quantity: {e}")
+            return
+            
+        file_path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv")],
                 title="Save generated data as..."
             )
 
-            if file_path:
-                try:
-                    data = self.generator.generate_bulk(quantity_dialog.quantity)
-                    self.generator.to_csv(data, file_path)
-                    messagebox.showinfo("Success", "Data successfully saved!")
-                except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save data: {e}")
-
+        if file_path:
+            try:
+                data = self.generator.generate_bulk(quantity)
+                self.generator.to_csv(data, file_path)
+                messagebox.showinfo("Success", f"Successfully saved {len(data)} records!")
+            except Exception as e:
+                self.logger.error(f"Error generating data: {e}")
+                messagebox.showerror("Error", f"Failed to generate data: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
