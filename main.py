@@ -5,6 +5,10 @@ from generators.data_loader import DataLoader
 import logging
 import os
 
+import webview
+import os
+
+
 class DataGeneratorApp:
     def __init__(self, root):
         self.root = root
@@ -161,6 +165,9 @@ class DataGeneratorApp:
                 messagebox.showerror("Error", f"Failed to generate data: {e}")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = DataGeneratorApp(root)
-    root.mainloop()
+    # Ścieżka do pliku HTML
+    path = os.path.abspath("webui.html")
+    url = f"file://{path}"
+
+    webview.create_window("Webowy Generator", url)
+    webview.start()
