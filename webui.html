@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generator danych</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Generator danych</h1>
+
+  <label for="locale">Wybierz lokalizację:</label>
+  <select id="locale">
+    <option value="pl">Polska</option>
+    <option value="de">Niemcy</option>
+  </select>
+
+  <label for="quantity">Liczba rekordów:</label>
+  <input type="number" id="quantity" min="1" value="100" />
+
+  <div class="checkbox-group">
+    <label><input type="checkbox" id="name" checked /> Imię</label>
+    <label><input type="checkbox" id="surname" checked /> Nazwisko</label>
+    <label><input type="checkbox" id="id" checked /> ID</label>
+    <label><input type="checkbox" id="birthdate" checked /> Data urodzenia</label>
+  </div>
+
+  <button onclick="generate()">Generuj</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
