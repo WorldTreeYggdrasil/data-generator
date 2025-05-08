@@ -1,0 +1,1 @@
+select*from first_names WHERE country_id=2 AND gender_id=2 LIMIT 1000;
