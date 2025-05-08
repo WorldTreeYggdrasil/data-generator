@@ -25,7 +25,7 @@ class ModularDataGenerator:
             return None
 
     def generate_record(self) -> Dict[str, str]:
-        """Generate a single record with locale-aware name/surname matching"""
+        """Generate a single record with locale-aware name/surname matching and address"""
         record = {}
         is_female = random.choice([True, False])
         
@@ -51,6 +51,18 @@ class ModularDataGenerator:
             id_number, birth_date = self.id_generator.generate_id_number()
             record["ID"] = id_number
             record["Birth Date"] = birth_date
+            
+        # Generate address components
+        if "streets" in self.data_types:
+            street = random.choice(self.data_types["streets"])
+            house_num = random.randint(1, 150)
+            record["Street"] = f"{street} {house_num}"
+            
+        if "cities" in self.data_types:
+            record["City"] = random.choice(self.data_types["cities"])
+            
+        if "countries" in self.data_types:
+            record["Country"] = random.choice(self.data_types["countries"])
             
         return record
 

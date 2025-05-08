@@ -31,6 +31,9 @@ async function generate() {
     const surname = document.getElementById('surname').checked;
     const id = document.getElementById('id').checked;
     const birthdate = document.getElementById('birthdate').checked;
+    const street = document.getElementById('street').checked;
+    const city = document.getElementById('city').checked;
+    const country = document.getElementById('country').checked;
     const format = document.getElementById('format').value;
   
     const fields = [];
@@ -38,6 +41,9 @@ async function generate() {
     if (surname) fields.push("Surname");
     if (id) fields.push("ID");
     if (birthdate) fields.push("Birth Date");
+    if (street) fields.push("Street");
+    if (city) fields.push("City");
+    if (country) fields.push("Country");
 
     try {
         const response = await fetch('/generate', {

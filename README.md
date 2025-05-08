@@ -5,19 +5,10 @@ A flexible data generator that automatically adapts to available datasets with l
 ## Features
 
 - **Dynamic Data Loading**: Automatically discovers available locales and data types
-- **Modular Architecture**: Easily extend with new data types and generators  
+- **Modular Architecture**: Easily extend with new data types and generators
 - **Locale-aware Generation**: Handles locale-specific formats (e.g. Polish vs German names/IDs)
-- **Multiple Output Formats**:
-  - CSV: Standard comma-separated values
-  - SQL: Ready-to-import SQL INSERT statements with table creation
-- **Web Interface**:
-  - Dynamic locale loading from data directory
-  - Field selection
-  - Format selection
-  - Direct download of generated data
-- **REST API**:
-  - `/locales`: Get available locales
-  - `/generate`: Generate data in requested format
+- **Multiple Output Formats**: CSV and SQL export options
+- **Dual Interfaces**: Web (Flask) and Desktop (Tkinter) interfaces
 - **Test Data Generation**: Built-in scripts for generating test datasets
 
 ## Getting Started
@@ -33,16 +24,23 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Generate test data:
+3. Run the application:
+```bash
+# Web interface
+python main.py
+
+# Desktop interface
+python main.py --gui
+```
+
+4. Generate test data:
 ```bash
 # Polish test data
 python tests/generate_polish_test_data.py
 
-# German test data 
+# German test data
 python tests/generate_german_test_data.py
 ```
-
-Output files will be saved to `test_output/` directory.
 
 ## Adding New Data
 
@@ -50,28 +48,13 @@ Output files will be saved to `test_output/` directory.
 2. Add data files following conventions:
    - For locales with gender-specific surnames (like Polish):
      - `ImionaMeskie.txt` (Male first names)
-     - `ImionaZenskie.txt` (Female first names)  
+     - `ImionaZenskie.txt` (Female first names)
      - `NazwiskaMeskie.txt` (Male surnames)
      - `NazwiskaZenskie.txt` (Female surnames)
    - For locales with shared surnames (like German):
      - `ImionaMeskie.txt`
      - `ImionaZenskie.txt`
      - `Nazwiska.txt` (Shared surnames)
-
-Example structures:
-```
-data/
-  pl/  # Polish (gender-specific surnames)
-    ImionaMeskie.txt
-    ImionaZenskie.txt
-    NazwiskaMeskie.txt  
-    NazwiskaZenskie.txt
-
-  de/  # German (shared surnames)
-    ImionaMeskie.txt
-    ImionaZenskie.txt
-    Nazwiska.txt
-```
 
 ## Adding ID Generators
 
@@ -83,11 +66,6 @@ def generate_id_number(year=None, month=None, day=None, gender=None):
     # Your implementation
     return id_number, birth_date
 ```
-3. The system will automatically load generators matching the selected locale
-
-Example implementations:
-- `pesel_pl.py`: Polish PESEL numbers with gender encoding
-- `pesel_de.py`: German-style ID numbers with birth date
 
 ## Architecture
 
@@ -99,15 +77,21 @@ graph TD
     C --> E[id_generators/]
     F[Test Scripts] --> C
     G[Output Files] --> C
-```
+    H[desktop_gui/app.py] --> C
+    I[sql/sql_generator.py] --> C
+    J[webui.html] --> A
 
-Key Components:
-- `DataLoader`: Discovers and loads locale-specific data files
-- `ModularDataGenerator`: Creates records with proper locale handling
-- `id_generators/`: Locale-specific ID generation implementations
-- `tests/`: Scripts for generating test datasets
+### Key Components
+
+- **Core Generator** (`generators/modular_generator.py`): Main generation logic
+- **SQL Generator** (`sql/sql_generator.py`): Relational SQL output
+- **Web Interface** (`main.py`, `webui.html`): Flask-based web UI
+- **Desktop Interface** (`desktop_gui/app.py`): Tkinter desktop GUI
+- **Data Files** (`data/`): Locale-specific datasets
+- **ID Generators** (`generators/id_generators/`): Locale-specific ID generation
 
 ## Requirements
 
 - Python 3.8+
 - tkinter (usually included with Python)
+- Flask (for web interface)
