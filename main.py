@@ -168,14 +168,21 @@ app = Flask(__name__, static_folder='.')
 
 @app.route('/')
 def serve_index():
+    """Serve the main web UI page"""
     return send_from_directory('.', 'webui.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
+    """Serve static files from the root directory"""
     return send_from_directory('.', path)
 
 @app.route('/locales')
 def get_locales():
+    """API endpoint to get list of available locales
+    
+    Returns:
+        JSON array of locale codes (e.g. ['pl', 'de'])
+    """
     base_data_path = os.path.join(os.path.dirname(__file__), "data")
     data_loader = DataLoader(base_data_path)
     locales = data_loader.discover_locales()
@@ -183,6 +190,17 @@ def get_locales():
 
 @app.route('/generate', methods=['POST'])
 def generate_data():
+    """API endpoint to generate data in requested format
+    
+    Request body (JSON):
+    - locale: locale code (e.g. 'pl')
+    - quantity: number of records to generate
+    - fields: array of field names to include
+    - format: output format ('csv' or 'sql')
+    
+    Returns:
+        File attachment with generated data in requested format
+    """
     data = request.get_json()
     locale = data.get('locale')
     quantity = int(data.get('quantity'))

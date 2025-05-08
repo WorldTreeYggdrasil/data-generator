@@ -5,9 +5,19 @@ A flexible data generator that automatically adapts to available datasets with l
 ## Features
 
 - **Dynamic Data Loading**: Automatically discovers available locales and data types
-- **Modular Architecture**: Easily extend with new data types and generators
+- **Modular Architecture**: Easily extend with new data types and generators  
 - **Locale-aware Generation**: Handles locale-specific formats (e.g. Polish vs German names/IDs)
-- **CSV Export**: Save generated data in standard CSV format
+- **Multiple Output Formats**:
+  - CSV: Standard comma-separated values
+  - SQL: Ready-to-import SQL INSERT statements with table creation
+- **Web Interface**:
+  - Dynamic locale loading from data directory
+  - Field selection
+  - Format selection
+  - Direct download of generated data
+- **REST API**:
+  - `/locales`: Get available locales
+  - `/generate`: Generate data in requested format
 - **Test Data Generation**: Built-in scripts for generating test datasets
 
 ## Getting Started
