@@ -9,10 +9,14 @@
     background: linear-gradient(135deg, #11376d, #061830); 
     color: #e2e8f0;
     padding: 2rem;
-    max-width: 640px;
-    margin: 3rem auto;
-    border-radius: 16px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
   }
   
   h1 {
@@ -96,4 +100,3 @@
     transform: scale(0.98);
     box-shadow: 0 3px 6px rgba(0,0,0,0.3);
   }
-  
