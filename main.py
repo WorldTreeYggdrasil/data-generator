@@ -1,12 +1,12 @@
+from flask import Flask, request, jsonify, make_response, send_from_directory
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from generators.modular_generator import ModularDataGenerator
 from generators.data_loader import DataLoader
 import logging
 import os
-
-import webview
-import os
+import io
+import csv
 
 
 class DataGeneratorApp:
@@ -164,10 +164,76 @@ class DataGeneratorApp:
                 self.logger.error(f"Error generating data: {e}")
                 messagebox.showerror("Error", f"Failed to generate data: {e}")
 
-if __name__ == "__main__":
-    # Ścieżka do pliku HTML
-    path = os.path.abspath("webui.html")
-    url = f"file://{path}"
+app = Flask(__name__, static_folder='.')
 
-    webview.create_window("Webowy Generator", url)
-    webview.start()
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'webui.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
+
+@app.route('/locales')
+def get_locales():
+    base_data_path = os.path.join(os.path.dirname(__file__), "data")
+    data_loader = DataLoader(base_data_path)
+    locales = data_loader.discover_locales()
+    return jsonify(locales)
+
+@app.route('/generate', methods=['POST'])
+def generate_data():
+    data = request.get_json()
+    locale = data.get('locale')
+    quantity = int(data.get('quantity'))
+    fields = data.get('fields', [])
+    format = data.get('format', 'csv')
+    
+    try:
+        generator = ModularDataGenerator(locale)
+        generated_data = generator.generate_bulk(quantity)
+        
+        if format == 'sql':
+            # Generate SQL
+            output = io.StringIO()
+            output.write(f"CREATE TABLE IF NOT EXISTS generated_data (\n")
+            output.write("    id SERIAL PRIMARY KEY,\n")
+            for field in fields:
+                output.write(f"    {field.lower()} VARCHAR(255),\n")
+            output.write(");\n\n")
+            
+            for record in generated_data:
+                cols = []
+                vals = []
+                for field in fields:
+                    cols.append(field.lower())
+                    vals.append(f"'{record.get(field, '')}'")
+                output.write(f"INSERT INTO generated_data ({', '.join(cols)}) VALUES ({', '.join(vals)});\n")
+            
+            # Prepare SQL response
+            response = make_response(output.getvalue())
+            response.headers['Content-Disposition'] = f'attachment; filename=generated_data_{locale}.sql'
+            response.headers['Content-type'] = 'application/sql'
+        else:
+            # Generate CSV
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(fields)
+            for record in generated_data:
+                row = []
+                for field in fields:
+                    row.append(record.get(field, ''))
+                writer.writerow(row)
+            
+            # Prepare CSV response
+            response = make_response(output.getvalue())
+            response.headers['Content-Disposition'] = f'attachment; filename=generated_data_{locale}.csv'
+            response.headers['Content-type'] = 'text/csv'
+        
+        return response
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
