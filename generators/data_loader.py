@@ -40,6 +40,12 @@ class DataLoader:
         try:
             with open(file_path, encoding='utf-8') as f:
                 return [line.strip() for line in f if line.strip()]
+        except FileNotFoundError:
+            self.logger.error(f"File not found: {file_path}")
+            return []
+        except UnicodeDecodeError:
+            self.logger.error(f"Decoding error: File {file_path} is not encoded in UTF-8 as expected.")
+            return []
         except Exception as e:
             self.logger.error(f"Error loading {filename}: {e}")
             return []

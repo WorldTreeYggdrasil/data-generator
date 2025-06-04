@@ -2,7 +2,7 @@ import os
 import random
 import importlib
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .data_loader import DataLoader
 
 class ModularDataGenerator:
@@ -13,7 +13,44 @@ class ModularDataGenerator:
         self.logger = logging.getLogger(__name__)
         self.data_loader = DataLoader(os.path.join(os.path.dirname(__file__), "../data/"))
         self.data_types = self.data_loader.discover_data_types(locale)
+        self.parsed_postal_codes_data: List[Dict[str, str]] = []
+        self._initialize_data()  # Nowa metoda do inicjalizacji i parsowania danych
+
         self.id_generator = self._load_id_generator()
+
+    def _initialize_data(self):
+        """
+        Inicjalizuje i parsuje dane, w tym dane z kodów pocztowych.
+        """
+        if 'kody_pocztowe' in self.data_types:
+            raw_postal_lines = self.data_types['kody_pocztowe']
+            self.parsed_postal_codes_data = self._parse_postal_codes_data(raw_postal_lines)
+            self.logger.info(f"Loaded and parsed {len(self.parsed_postal_codes_data)} postal code entries.")
+        else:
+            self.logger.warning("No 'kody_pocztowe.txt' found for the current locale.")
+
+    def _parse_postal_codes_data(self, raw_lines: List[str]) -> List[Dict[str, str]]:
+        """
+        Parsuje surowe linie z pliku kodów pocztowych do listy słowników.
+        Oczekiwany format: PNA;MIEJSCOWOŚĆ;ULICA;NUMERY;GMINA;POWIAT;WOJEWÓDZTWO
+        """
+        postal_codes_list = []
+        for line in raw_lines:
+            parts = line.split(';')
+            if len(parts) >= 7:
+                postal_code_entry = {
+                    'pna': parts[0].strip(),
+                    'miejscowosc': parts[1].strip(),
+                    'ulica': parts[2].strip() if parts[2].strip() else None,
+                    'numery': parts[3].strip() if parts[3].strip() else None,
+                    'gmina': parts[4].strip(),
+                    'powiat': parts[5].strip(),
+                    'wojewodztwo': parts[6].strip()
+                }
+                postal_codes_list.append(postal_code_entry)
+            else:
+                self.logger.warning(f"Skipping malformed line in postal codes data: {line}")
+        return postal_codes_list
         
     def _load_id_generator(self):
         """Dynamically load ID generator module if available"""
@@ -53,17 +90,52 @@ class ModularDataGenerator:
             record["Birth Date"] = birth_date
             
         # Generate address components
-        if "streets" in self.data_types:
-            street = random.choice(self.data_types["streets"])
-            house_num = random.randint(1, 150)
-            record["Street"] = f"{street} {house_num}"
-            
-        if "cities" in self.data_types:
-            record["City"] = random.choice(self.data_types["cities"])
-            
-        if "countries" in self.data_types:
-            record["Country"] = random.choice(self.data_types["countries"])
-            
+        if self.parsed_postal_codes_data:
+            chosen_entry = random.choice(self.parsed_postal_codes_data)
+
+            # Generowanie numeru domu z danych lub losowo
+            house_number_suffix = ""
+            if chosen_entry['numery']:
+                if '-' in chosen_entry['numery']:  # Obsługa zakresów np. "1-10"
+                    try:
+                        start_num, end_num = map(int, chosen_entry['numery'].split('-'))
+                        house_number_suffix = str(random.randint(start_num, end_num))
+                    except ValueError:
+                        house_number_suffix = chosen_entry['numery']  # W przypadku błędu, użyj surowego ciągu
+                elif ',' in chosen_entry['numery']:  # Obsługa list np. "1,3,5"
+                    possible_numbers = [n.strip() for n in chosen_entry['numery'].split(',')]
+                    house_number_suffix = random.choice(possible_numbers)
+                else:  # Konkretny numer
+                    house_number_suffix = chosen_entry['numery']
+            else:
+                # Domyślny losowy numer, jeśli brak danych dla konkretnego wpisu
+                house_number_suffix = str(random.randint(1, 150))
+
+            # Użyj danych z pliku kody_pocztowe.txt dla wszystkich pól adresowych
+            record["Street"] = f"{chosen_entry['ulica']} {house_number_suffix}".strip() if chosen_entry[
+                'ulica'] else f"Nr {house_number_suffix}"
+            record["City"] = chosen_entry['miejscowosc']
+            record["Postal Code"] = chosen_entry['pna']  # Nowe pole
+            record["Gmina"] = chosen_entry['gmina']  # Nowe pole
+            record["Powiat"] = chosen_entry['powiat']  # Nowe pole
+            record["Wojewodztwo"] = chosen_entry['wojewodztwo']  # Nowe pole
+            record[
+                "Full Address"] = f"{record['Street']}, {record['Postal Code']} {record['City']}, {record['Gmina']}, {record['Powiat']}, {record['Wojewodztwo']}"
+        else:
+            # Fallback do starej logiki, jeśli brak danych o kodach pocztowych
+            self.logger.warning("No postal code data available, generating simplified address.")
+            if "streets" in self.data_types:
+                street = random.choice(self.data_types["streets"])
+                house_num = random.randint(1, 150)
+                record["Street"] = f"{street} {house_num}"
+
+            if "cities" in self.data_types:
+                record["City"] = random.choice(self.data_types["cities"])
+
+            if "countries" in self.data_types:
+                record["Country"] = random.choice(self.data_types["countries"])
+            # Brak pełnych pól adresowych bez danych z kodów pocztowych
+
         return record
 
     def generate_bulk(self, quantity: int) -> List[Dict[str, str]]:
