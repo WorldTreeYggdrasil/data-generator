@@ -1,1 +1,1 @@
-SELECT * FROM baza_generator_danych.first_names LIMIT 1000;
+SELECT * FROM baza_generator_danych.generated_people LIMIT 1000;
