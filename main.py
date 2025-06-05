@@ -6,6 +6,12 @@ import os
 import io
 import csv
 import argparse
+import mysql.connector
+from mysql.connector import Error
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 app = Flask(__name__, static_folder='.')
 
@@ -34,55 +40,78 @@ def get_locales():
 @app.route('/generate', methods=['POST'])
 def generate_data():
     """API endpoint to generate data in requested format
-    
+
     Request body (JSON):
     - locale: locale code (e.g. 'pl')
     - quantity: number of records to generate
     - fields: array of field names to include
     - format: output format ('csv' or 'sql')
-    
+
     Returns:
-        File attachment with generated data in requested format
+        File attachment or DB insert depending on format
     """
+    from mysql.connector import connect, Error
+
     data = request.get_json()
     locale = data.get('locale')
     quantity = int(data.get('quantity'))
     fields = data.get('fields', [])
     format = data.get('format', 'csv')
-    
+
     try:
         generator = ModularDataGenerator(locale)
         generated_data = generator.generate_bulk(quantity)
-        
+
         if format == 'sql':
+            from sql.sql_generator import generate_sql
+            sql_content = generate_sql(generated_data, locale, fields)
+
             try:
-                from sql.sql_generator import generate_sql
-                sql_content = generate_sql(generated_data, locale, fields)
+                connection = connect(
+                    host=os.getenv('DB_HOST'),
+                    database=os.getenv('DB_NAME'),
+                    user=os.getenv('DB_USER'),
+                    password=os.getenv('DB_PASSWORD')
+                )
+
+
+                if connection.is_connected():
+                    cursor = connection.cursor()
+                    for stmt in sql_content.split(';'):
+                        stmt = stmt.strip()
+                        if stmt:
+                            cursor.execute(stmt)
+                    connection.commit()
+                    cursor.close()
+                    connection.close()
+                    return jsonify({'message': '✅ Dane zostały zapisane w bazie danych.'}), 200
+
+            except Error as db_error:
+                print(f"❌ Nie można połączyć z bazą: {db_error}")
+                # Jeśli baza nie działa — generujemy plik SQL
                 response = make_response(sql_content)
                 response.headers['Content-Disposition'] = f'attachment; filename=generated_data_{locale}.sql'
                 response.headers['Content-type'] = 'application/sql'
-            except Exception as e:
-                return jsonify({'error': f'SQL generation failed: {str(e)}'}), 500
+                return response
+
         else:
             # Generate CSV
             output = io.StringIO()
             writer = csv.writer(output)
             writer.writerow(fields)
             for record in generated_data:
-                row = []
-                for field in fields:
-                    row.append(record.get(field, ''))
+                row = [record.get(field, '') for field in fields]
                 writer.writerow(row)
-            
+
             # Prepare CSV response
             response = make_response(output.getvalue())
             response.headers['Content-Disposition'] = f'attachment; filename=generated_data_{locale}.csv'
             response.headers['Content-type'] = 'text/csv'
-        
-        return response
-        
+            return response
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Data Generator Application')
