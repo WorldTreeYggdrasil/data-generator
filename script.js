@@ -6,10 +6,10 @@ async function loadLocales() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const locales = await response.json();
-        
+
         const select = document.getElementById('locale');
         select.innerHTML = '';
-        
+
         locales.forEach(locale => {
             const option = document.createElement('option');
             option.value = locale;
@@ -17,67 +17,57 @@ async function loadLocales() {
             select.appendChild(option);
         });
     } catch (error) {
-        console.error('Error loading locales:', error);
+        showMessage("Błąd wczytywania lokalizacji: " + error.message, true);
     }
 }
 
-// Load locales when page loads
 document.addEventListener('DOMContentLoaded', loadLocales);
 
-async function generate() {
-    const locale = document.getElementById('locale').value;
-    const quantity = document.getElementById('quantity').value;
-    const name = document.getElementById('name').checked;
-    const surname = document.getElementById('surname').checked;
-    const id = document.getElementById('id').checked;
-    const birthdate = document.getElementById('birthdate').checked;
-    const street = document.getElementById('street').checked;
-    const city = document.getElementById('city').checked;
-    const country = document.getElementById('country').checked;
-    const postalCode = document.getElementById('postalCode').checked; // Nowy
+// Pokazuje komunikaty użytkownikowi
+function showMessage(text, isError = false) {
+    const messageDiv = document.getElementById("message");
+    messageDiv.style.display = "block";
+    messageDiv.textContent = text;
+    messageDiv.className = isError ? "message error" : "message success";
+}
 
-    const format = document.getElementById('format').value;
-  
-    const fields = [];
-    if (name) fields.push("Name");
-    if (surname) fields.push("Surname");
-    if (id) fields.push("ID");
-    if (birthdate) fields.push("Birth Date");
-    if (street) fields.push("Street");
-    if (city) fields.push("City");
-    if (country) fields.push("Country");
-    if (postalCode) fields.push("Postal Code"); // Dodajemy tylko PNA
+// Główna funkcja generowania danych
+async function generate() {
+    const locale = document.getElementById("locale").value;
+    const quantity = document.getElementById("quantity").value;
+    const format = document.getElementById("format").value;
+
+    const fields = Array.from(document.querySelectorAll(".checkbox-group input:checked"))
+        .map(cb => cb.id.charAt(0).toUpperCase() + cb.id.slice(1));
 
     try {
-        const response = await fetch('/generate', {
-            method: 'POST',
+        const response = await fetch("/generate", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                locale,
-                quantity,
-                fields,
-                format
+                locale: locale,
+                quantity: quantity,
+                format: format,
+                fields: fields
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.headers.get("Content-Type").includes("application/json")) {
+            const json = await response.json();
+            showMessage(json.message || json.error, true);
+        } else {
+            const blob = await response.blob();
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = response.headers.get("Content-Disposition").split("filename=")[1];
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showMessage("Dane zostały wygenerowane pomyślnie.");
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const extension = format === 'sql' ? '.sql' : '.csv';
-        a.download = `generated_data_${locale}${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error('Error:', error);
-        alert(`Error generating data: ${error.message}`);
+    } catch (err) {
+        showMessage("Wystąpił błąd: " + err.message, true);
     }
 }
