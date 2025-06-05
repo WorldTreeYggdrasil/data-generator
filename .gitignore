@@ -43,3 +43,6 @@ env/
 # Logs and databases
 *.log
 *.sqlite
+
+# .gitignore
+.env
