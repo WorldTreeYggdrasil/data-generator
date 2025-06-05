@@ -97,8 +97,10 @@ class DataGeneratorApp:
         ttk.Checkbutton(
             fields_frame,
             text="ID",
-            variable=self.include_id
+            variable=self.include_id,
+            state="disabled"
         ).grid(row=0, column=2, padx=5, sticky="w")
+
 
         self.include_birthdate = tk.BooleanVar(value=True)
         ttk.Checkbutton(
