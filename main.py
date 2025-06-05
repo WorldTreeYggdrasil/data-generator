@@ -57,7 +57,7 @@ def generate_data():
         if format == 'sql':
             try:
                 from sql.sql_generator import generate_sql
-                sql_content = generate_sql(generated_data, locale)
+                sql_content = generate_sql(generated_data, locale, fields)
                 response = make_response(sql_content)
                 response.headers['Content-Disposition'] = f'attachment; filename=generated_data_{locale}.sql'
                 response.headers['Content-type'] = 'application/sql'
