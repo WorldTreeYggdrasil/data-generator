@@ -25,6 +25,7 @@ def generate_sql(data: List[Dict[str, str]], locale: str) -> str:
     output.write("    person_id VARCHAR(50) REFERENCES persons(id),\n")
     output.write("    street VARCHAR(100),\n")
     output.write("    city VARCHAR(100),\n")
+    output.write("    postal_code VARCHAR(10),\n")
     output.write("    country VARCHAR(100),\n")
     output.write("    PRIMARY KEY (person_id)\n")
     output.write(");\n\n")
@@ -40,10 +41,11 @@ def generate_sql(data: List[Dict[str, str]], locale: str) -> str:
         output.write(");\n")
         
         # Insert address
-        output.write("INSERT INTO addresses (person_id, street, city, country) VALUES (")
+        output.write("INSERT INTO addresses (person_id, street, city, postal_code, country) VALUES (")
         output.write(f"'{record.get('ID', '')}', ")
         output.write(f"'{record.get('Street', '')}', ")
         output.write(f"'{record.get('City', '')}', ")
+        output.write(f"'{record.get('Postal Code', '')}', ")
         output.write(f"'{record.get('Country', '')}'")
         output.write(");\n")
     

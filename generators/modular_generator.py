@@ -121,6 +121,12 @@ class ModularDataGenerator:
             record["Gmina"] = chosen_entry['gmina']
             record["Powiat"] = chosen_entry['powiat']
             record["Wojewodztwo"] = chosen_entry['wojewodztwo']
+            
+            # Always include country from countries.txt if available
+            if "countries" in self.data_types and self.data_types["countries"]:
+                record["Country"] = random.choice(self.data_types["countries"])
+            else:
+                record["Country"] = "Poland"  # Default fallback
 
             # Zmiana 2: Usunięcie pola "Full Address"
             # record["Full Address"] = f"{record['Street']}, {record['Postal Code']} {record['City']}, {record['Gmina']}, {record['Powiat']}, {record['Wojewodztwo']}"
