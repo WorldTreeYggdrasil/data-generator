@@ -7,6 +7,21 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Powiadomienie -->
+  <div id="notification" style="
+    display: none;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    font-weight: bold;
+  "></div>
+
   <h1>Generator danych</h1>
 
   <label for="locale">Wybierz lokalizację:</label>
@@ -29,7 +44,6 @@
     <label><input type="checkbox" id="postalCode" /> Kod Pocztowy</label>
   </div>
 
-
   <label for="format">Format wyjściowy:</label>
   <select id="format">
     <option value="csv">CSV</option>
@@ -38,7 +52,6 @@
 
   <button onclick="generate()">Generuj</button>
   <div id="message" class="message"></div>
-
 
   <script src="script.js"></script>
 </body>
