@@ -88,7 +88,7 @@ class ModularDataGenerator:
             id_number, birth_date = self.id_generator.generate_id_number()
             record["ID"] = id_number
             record["Birth Date"] = birth_date
-            
+
         # Generate address components
         if self.parsed_postal_codes_data:
             chosen_entry = random.choice(self.parsed_postal_codes_data)
@@ -112,29 +112,38 @@ class ModularDataGenerator:
                 house_number_suffix = str(random.randint(1, 150))
 
             # Użyj danych z pliku kody_pocztowe.txt dla wszystkich pól adresowych
-            record["Street"] = f"{chosen_entry['ulica']} {house_number_suffix}".strip() if chosen_entry[
-                'ulica'] else f"Nr {house_number_suffix}"
+            # Zmiana 1: Jeśli ulica jest pusta, użyj miejscowości + numeru domu
+            record["Street"] = f"{chosen_entry['ulica']} {house_number_suffix}".strip() if chosen_entry['ulica'] else \
+                f"{chosen_entry['miejscowosc']} {house_number_suffix}".strip()
+
             record["City"] = chosen_entry['miejscowosc']
-            record["Postal Code"] = chosen_entry['pna']  # Nowe pole
-            record["Gmina"] = chosen_entry['gmina']  # Nowe pole
-            record["Powiat"] = chosen_entry['powiat']  # Nowe pole
-            record["Wojewodztwo"] = chosen_entry['wojewodztwo']  # Nowe pole
-            record[
-                "Full Address"] = f"{record['Street']}, {record['Postal Code']} {record['City']}, {record['Gmina']}, {record['Powiat']}, {record['Wojewodztwo']}"
+            record["Postal Code"] = chosen_entry['pna']
+            record["Gmina"] = chosen_entry['gmina']
+            record["Powiat"] = chosen_entry['powiat']
+            record["Wojewodztwo"] = chosen_entry['wojewodztwo']
+
+            # Zmiana 2: Usunięcie pola "Full Address"
+            # record["Full Address"] = f"{record['Street']}, {record['Postal Code']} {record['City']}, {record['Gmina']}, {record['Powiat']}, {record['Wojewodztwo']}"
         else:
             # Fallback do starej logiki, jeśli brak danych o kodach pocztowych
             self.logger.warning("No postal code data available, generating simplified address.")
-            if "streets" in self.data_types:
+            if "streets" in self.data_types and self.data_types["streets"]:  # Sprawdź, czy lista nie jest pusta
                 street = random.choice(self.data_types["streets"])
                 house_num = random.randint(1, 150)
                 record["Street"] = f"{street} {house_num}"
+            else:  # Dodany else, aby w przypadku braku streets.txt nie dodawać pustego Street
+                self.logger.warning("No 'streets.txt' data available for fallback.")
 
-            if "cities" in self.data_types:
+            if "cities" in self.data_types and self.data_types["cities"]:  # Sprawdź, czy lista nie jest pusta
                 record["City"] = random.choice(self.data_types["cities"])
+            else:
+                self.logger.warning("No 'cities.txt' data available for fallback.")
 
-            if "countries" in self.data_types:
+            if "countries" in self.data_types and self.data_types["countries"]:  # Sprawdź, czy lista nie jest pusta
                 record["Country"] = random.choice(self.data_types["countries"])
-            # Brak pełnych pól adresowych bez danych z kodów pocztowych
+            else:
+                self.logger.warning("No 'countries.txt' data available for fallback.")
+            # Brak pełnych pól adresowych bez danych z kodów pocztowych (Postal Code, Gmina, Powiat, Wojewodztwo)
 
         return record
 

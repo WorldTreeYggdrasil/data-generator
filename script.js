@@ -35,7 +35,6 @@ async function generate() {
     const city = document.getElementById('city').checked;
     const country = document.getElementById('country').checked;
     const postalCode = document.getElementById('postalCode').checked; // Nowy
-    const fullAddress = document.getElementById('fullAddress').checked; // Istniejący
 
     const format = document.getElementById('format').value;
   
@@ -44,22 +43,11 @@ async function generate() {
     if (surname) fields.push("Surname");
     if (id) fields.push("ID");
     if (birthdate) fields.push("Birth Date");
-    if (fullAddress) {
-        // Jeśli pełny adres zaznaczony, dodaj wszystkie jego komponenty
-        fields.push("Full Address"); // Cały sformatowany adres
-        fields.push("Street");
-        fields.push("City");
-        fields.push("Postal Code");
-        fields.push("Gmina");
-        fields.push("Powiat");
-        fields.push("Wojewodztwo");
-    } else {
-        // Jeśli pełny adres NIE jest zaznaczony, ale inne pola są, dodaj je indywidualnie
-        if (street) fields.push("Street");
-        if (city) fields.push("City");
-        if (country) fields.push("Country");
-        if (postalCode) fields.push("Postal Code"); // Dodajemy tylko PNA
-    }
+    if (street) fields.push("Street");
+    if (city) fields.push("City");
+    if (country) fields.push("Country");
+    if (postalCode) fields.push("Postal Code"); // Dodajemy tylko PNA
+
     try {
         const response = await fetch('/generate', {
             method: 'POST',
