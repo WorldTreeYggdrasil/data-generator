@@ -74,7 +74,6 @@ def generate_data():
                     password=os.getenv('DB_PASSWORD')
                 )
 
-
                 if connection.is_connected():
                     cursor = connection.cursor()
                     for stmt in sql_content.split(';'):
@@ -85,6 +84,14 @@ def generate_data():
                     cursor.close()
                     connection.close()
                     return jsonify({'message': '✅ Dane zostały zapisane w bazie danych.'}), 200
+
+            except Error as db_error:
+                print(f"❌ Nie można połączyć z bazą: {db_error}")
+                return jsonify({
+                    'error': 'Nie udało się połączyć z bazą danych.',
+                    'message': 'Dane zostały zapisane do pliku SQL.'
+                }), 200
+
 
             except Error as db_error:
                 print(f"❌ Nie można połączyć z bazą: {db_error}")
