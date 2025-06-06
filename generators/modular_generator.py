@@ -83,11 +83,15 @@ class ModularDataGenerator:
             else:
                 record["Surname"] = random.choice(self.data_types.get("NazwiskaMeskie", []))
         
-        # Add ID number and birth date if generator available
+        # Add ID number and birth date
         if self.id_generator:
             id_number, birth_date = self.id_generator.generate_id_number()
             record["ID"] = id_number
             record["Birth Date"] = birth_date
+        else:
+            # Fallback random ID if no generator available
+            record["ID"] = f"{random.randint(100000, 999999)}"
+            record["Birth Date"] = f"{random.randint(1950, 2000)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}"
 
         # Generate address components
         if self.parsed_postal_codes_data:
@@ -117,7 +121,7 @@ class ModularDataGenerator:
                 f"{chosen_entry['miejscowosc']} {house_number_suffix}".strip()
 
             record["City"] = chosen_entry['miejscowosc']
-            record["Postal Code"] = chosen_entry['pna']
+            record["Postal Code"] = chosen_entry['pna'] if chosen_entry['pna'] else f"{random.randint(10, 99)}-{random.randint(100, 999)}"
             record["Gmina"] = chosen_entry['gmina']
             record["Powiat"] = chosen_entry['powiat']
             record["Wojewodztwo"] = chosen_entry['wojewodztwo']
@@ -126,7 +130,7 @@ class ModularDataGenerator:
             if "countries" in self.data_types and self.data_types["countries"]:
                 record["Country"] = random.choice(self.data_types["countries"])
             else:
-                record["Country"] = "Poland"  # Default fallback
+                record["Country"] = "Poland" if self.locale == "pl" else "Germany"  # Default fallback based on locale
 
             # Zmiana 2: Usunięcie pola "Full Address"
             # record["Full Address"] = f"{record['Street']}, {record['Postal Code']} {record['City']}, {record['Gmina']}, {record['Powiat']}, {record['Wojewodztwo']}"

@@ -102,12 +102,28 @@ def generate_data():
                 return response
 
         else:
-            # Generate CSV
+            # Generate CSV with flexible field name matching
             output = io.StringIO()
             writer = csv.writer(output)
             writer.writerow(fields)
+            
             for record in generated_data:
-                row = [record.get(field, '') for field in fields]
+                row = []
+                for field in fields:
+                    # Try exact match first
+                    if field in record:
+                        row.append(record[field])
+                        continue
+                    
+                    # Try case-insensitive and space-insensitive match
+                    field_lower = field.lower().replace(" ", "")
+                    for actual_field in record:
+                        if field_lower == actual_field.lower().replace(" ", ""):
+                            row.append(record[actual_field])
+                            break
+                    else:
+                        row.append('')  # Field not found
+                
                 writer.writerow(row)
 
             # Prepare CSV response

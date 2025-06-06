@@ -47,6 +47,7 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
     output.write(");\n\n")
     
     output.write("CREATE TABLE IF NOT EXISTS addresses (\n")
+    output.write("    id SERIAL PRIMARY KEY,\n")
     output.write("    person_id VARCHAR(50) REFERENCES persons(id),\n")
     if "Street" in included_fields:
         output.write("    street VARCHAR(100),\n")
@@ -56,11 +57,14 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
         output.write("    postal_code VARCHAR(10),\n")
     if "Country" in included_fields:
         output.write("    country VARCHAR(100),\n")
-    output.write("    PRIMARY KEY (person_id)\n")
+    output.write("    UNIQUE (person_id, street, city, postal_code, country)\n")
     output.write(");\n\n")
     
     # Debug output showing selected fields
     #output.write(f"-- Selected fields: {', '.join(sorted(included_fields)) or 'ALL'}\n\n")
+    
+    # Start transaction
+    output.write("BEGIN;\n\n")
     
     # Insert data
     for i, record in enumerate(data, 1):
@@ -71,18 +75,24 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
         person_fields = []
         person_values = []
         for field in included_fields:
-            if field == "ID":
+            # Handle field name variations
+            field_lower = field.lower().replace(" ", "")
+            if field_lower == "id":
                 person_fields.append("id")
-                person_values.append(f"'{record.get('ID', '')}'")
-            elif field == "Name":
+                val = record.get(field, '') or record.get('ID', '') or record.get('Id', '')
+                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+            elif field_lower == "name":
                 person_fields.append("name")
-                person_values.append(f"'{record.get('Name', '')}'")
-            elif field == "Surname":
+                val = record.get(field, '') or record.get('Name', '')
+                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+            elif field_lower == "surname":
                 person_fields.append("surname")
-                person_values.append(f"'{record.get('Surname', '')}'")
-            elif field == "Birth Date":
+                val = record.get(field, '') or record.get('Surname', '')
+                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+            elif field_lower in ["birthdate", "birth date"]:
                 person_fields.append("birth_date")
-                person_values.append(f"'{record.get('Birth Date', '')}'")
+                val = record.get(field, '') or record.get('Birth Date', '') or record.get('Birthdate', '')
+                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
         
         if person_fields:
             output.write(f"INSERT INTO persons ({', '.join(person_fields)}) VALUES (")
@@ -101,18 +111,24 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
             address_values.append(f"'{record.get('ID', '')}'")
             
         for field in included_fields:
-            if field == "Street":
+            # Handle field name variations
+            field_lower = field.lower().replace(" ", "")
+            if field_lower == "street":
                 address_fields.append("street")
-                address_values.append(f"'{record.get('Street', '')}'")
-            elif field == "City":
+                val = record.get(field, '') or record.get('Street', '')
+                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+            elif field_lower == "city":
                 address_fields.append("city")
-                address_values.append(f"'{record.get('City', '')}'")
-            elif field == "Postal Code":
+                val = record.get(field, '') or record.get('City', '')
+                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+            elif field_lower in ["postalcode", "postal code"]:
                 address_fields.append("postal_code")
-                address_values.append(f"'{record.get('Postal Code', '')}'")
-            elif field == "Country":
+                val = record.get(field, '') or record.get('Postal Code', '') or record.get('PostalCode', '')
+                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+            elif field_lower == "country":
                 address_fields.append("country")
-                address_values.append(f"'{record.get('Country', '')}'")
+                val = record.get(field, '') or record.get('Country', '')
+                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
         
         if len(address_fields) > 1:  # More than just person_id
             output.write(f"INSERT INTO addresses ({', '.join(address_fields)}) VALUES (")
@@ -120,5 +136,8 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
             output.write(");\n")
         else:
             output.write("-- Skipping addresses insert (no selected fields)\n")
+    
+    # Commit transaction
+    output.write("\nCOMMIT;\n")
     
     return output.getvalue()
