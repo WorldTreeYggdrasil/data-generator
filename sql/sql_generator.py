@@ -64,35 +64,47 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
     #output.write(f"-- Selected fields: {', '.join(sorted(included_fields)) or 'ALL'}\n\n")
     
     # Start transaction
-    output.write("BEGIN;\n\n")
+    #output.write("BEGIN;\n\n")
+    
+    # Debug output showing complete record structure
+    #output.write("-- FIRST RECORD STRUCTURE --\n")
+    for k, v in data[0].items():
+        output.write(f"-- {k}: {v}\n")
+    output.write("\n")
+    
+    # Show all unique field names across all records
+    all_fields = set()
+    for record in data:
+        all_fields.update(record.keys())
+    #output.write(f"-- All unique fields found: {', '.join(all_fields)}\n\n")
     
     # Insert data
     for i, record in enumerate(data, 1):
-        # Debug record number
-        #output.write(f"-- Record {i}\n")
+        #output.write(f"-- Record {i} fields: {', '.join(record.keys())}\n")
         
         # Insert person with selected fields
         person_fields = []
         person_values = []
         for field in included_fields:
-            # Handle field name variations
+            # Handle field name variations with flexible matching
             field_lower = field.lower().replace(" ", "")
             if field_lower == "id":
                 person_fields.append("id")
-                val = record.get(field, '') or record.get('ID', '') or record.get('Id', '')
-                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+                val = next((record[k] for k in record if k.lower().replace(" ", "") == "id"), '')
+                person_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
             elif field_lower == "name":
                 person_fields.append("name")
-                val = record.get(field, '') or record.get('Name', '')
-                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+                val = next((record[k] for k in record if k.lower().replace(" ", "") == "name"), '')
+                person_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
             elif field_lower == "surname":
                 person_fields.append("surname")
-                val = record.get(field, '') or record.get('Surname', '')
-                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
-            elif field_lower in ["birthdate", "birth date"]:
+                val = next((record[k] for k in record if k.lower().replace(" ", "") == "surname"), '')
+                person_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
+            elif field_lower == "birthdate":
                 person_fields.append("birth_date")
-                val = record.get(field, '') or record.get('Birth Date', '') or record.get('Birthdate', '')
-                person_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+                val = record.get("BirthDate", "")
+                person_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
+                #output.write(f"-- Using standardized BirthDate field: {val}\n")
         
         if person_fields:
             output.write(f"INSERT INTO persons ({', '.join(person_fields)}) VALUES (")
@@ -111,24 +123,25 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
             address_values.append(f"'{record.get('ID', '')}'")
             
         for field in included_fields:
-            # Handle field name variations
+            # Handle field name variations with flexible matching
             field_lower = field.lower().replace(" ", "")
             if field_lower == "street":
                 address_fields.append("street")
-                val = record.get(field, '') or record.get('Street', '')
-                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+                val = next((record[k] for k in record if k.lower().replace(" ", "") == "street"), '')
+                address_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
             elif field_lower == "city":
                 address_fields.append("city")
-                val = record.get(field, '') or record.get('City', '')
-                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
-            elif field_lower in ["postalcode", "postal code"]:
+                val = next((record[k] for k in record if k.lower().replace(" ", "") == "city"), '')
+                address_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
+            elif field_lower == "postalcode":
                 address_fields.append("postal_code")
-                val = record.get(field, '') or record.get('Postal Code', '') or record.get('PostalCode', '')
-                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+                val = record.get("PostalCode", "")
+                address_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
+                #output.write(f"-- Using standardized PostalCode field: {val}\n")
             elif field_lower == "country":
                 address_fields.append("country")
-                val = record.get(field, '') or record.get('Country', '')
-                address_values.append("NULL" if not val else f"'{val.replace("'", "''")}'")
+                val = next((record[k] for k in record if k.lower().replace(" ", "") == "country"), '')
+                address_values.append("NULL" if not val else f"'{str(val).replace("'", "''")}'")
         
         if len(address_fields) > 1:  # More than just person_id
             output.write(f"INSERT INTO addresses ({', '.join(address_fields)}) VALUES (")

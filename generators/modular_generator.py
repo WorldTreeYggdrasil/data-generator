@@ -83,15 +83,18 @@ class ModularDataGenerator:
             else:
                 record["Surname"] = random.choice(self.data_types.get("NazwiskaMeskie", []))
         
-        # Add ID number and birth date
+        # Add ID number and birth date with consistent field names
         if self.id_generator:
             id_number, birth_date = self.id_generator.generate_id_number()
             record["ID"] = id_number
-            record["Birth Date"] = birth_date
+            record["BirthDate"] = birth_date  # Standardized field name
+            self.logger.debug(f"Generated ID: {id_number}, BirthDate: {birth_date}")
         else:
             # Fallback random ID if no generator available
             record["ID"] = f"{random.randint(100000, 999999)}"
-            record["Birth Date"] = f"{random.randint(1950, 2000)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}"
+            birth_date = f"{random.randint(1950, 2000)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}"
+            record["BirthDate"] = birth_date  # Standardized field name
+            self.logger.debug(f"Generated fallback ID: {record['ID']}, BirthDate: {birth_date}")
 
         # Generate address components
         if self.parsed_postal_codes_data:
@@ -121,7 +124,9 @@ class ModularDataGenerator:
                 f"{chosen_entry['miejscowosc']} {house_number_suffix}".strip()
 
             record["City"] = chosen_entry['miejscowosc']
-            record["Postal Code"] = chosen_entry['pna'] if chosen_entry['pna'] else f"{random.randint(10, 99)}-{random.randint(100, 999)}"
+            postal_code = chosen_entry['pna'] if chosen_entry['pna'] else f"{random.randint(10, 99)}-{random.randint(100, 999)}"
+            record["PostalCode"] = postal_code  # Standardized field name
+            self.logger.debug(f"Generated postal code: {postal_code}")
             record["Gmina"] = chosen_entry['gmina']
             record["Powiat"] = chosen_entry['powiat']
             record["Wojewodztwo"] = chosen_entry['wojewodztwo']

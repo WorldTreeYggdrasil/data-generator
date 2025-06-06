@@ -76,26 +76,29 @@ def generate_data():
 
                 if connection.is_connected():
                     cursor = connection.cursor()
+                    
+                    # Execute each statement with error handling
                     for stmt in sql_content.split(';'):
                         stmt = stmt.strip()
                         if stmt:
-                            cursor.execute(stmt)
+                            try:
+                                cursor.execute(stmt)
+                            except Error as e:
+                                print(f"❌ Error executing SQL: {e}")
+                                connection.rollback()
+                                return jsonify({
+                                    'error': f'SQL execution error: {str(e)}',
+                                    'sql_statement': stmt
+                                }), 500
+                    
                     connection.commit()
                     cursor.close()
                     connection.close()
-                    return jsonify({'message': '✅ Dane zostały zapisane w bazie danych.'}), 200
+                    return jsonify({'message': '✅ Data successfully saved to database.'}), 200
 
             except Error as db_error:
-                print(f"❌ Nie można połączyć z bazą: {db_error}")
-                return jsonify({
-                    'error': 'Nie udało się połączyć z bazą danych.',
-                    'message': 'Dane zostały zapisane do pliku SQL.'
-                }), 200
-
-
-            except Error as db_error:
-                print(f"❌ Nie można połączyć z bazą: {db_error}")
-                # Jeśli baza nie działa — generujemy plik SQL
+                print(f"❌ Database connection error: {db_error}")
+                # If DB fails, return SQL file
                 response = make_response(sql_content)
                 response.headers['Content-Disposition'] = f'attachment; filename=generated_data_{locale}.sql'
                 response.headers['Content-type'] = 'application/sql'
