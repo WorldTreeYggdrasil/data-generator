@@ -68,9 +68,9 @@ def generate_sql(data: List[Dict[str, str]], locale: str, fields: List[str] = No
     
     # Debug output showing complete record structure
     #output.write("-- FIRST RECORD STRUCTURE --\n")
-    for k, v in data[0].items():
-        output.write(f"-- {k}: {v}\n")
-    output.write("\n")
+    #for k, v in data[0].items():
+    #   output.write(f"-- {k}: {v}\n")
+    #output.write("\n")
     
     # Show all unique field names across all records
     all_fields = set()
