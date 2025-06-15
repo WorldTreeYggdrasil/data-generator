@@ -53,6 +53,19 @@
   <button onclick="generate()">Generuj</button>
   <div id="message" class="message"></div>
 
+  <!-- Modal z podglądem SQL -->
+  <div id="sql-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#1e293b; color:white; padding:2rem; border-radius:15px; width:90%; max-width:800px; box-shadow:0 0 30px rgba(0,0,0,0.5);">
+      <h2 style="margin-bottom:1rem; font-size:1.5rem;">Podgląd SQL</h2>
+      <textarea id="sql-preview-box" readonly style="width:100%; height:300px; background:#0f172a; color:#f1f5f9; border:none; padding:1rem; border-radius:10px;"></textarea>
+      <div style="margin-top:1.5rem; display:flex; justify-content:space-between;">
+        <button onclick="confirmSqlInsert()">Zapisz do bazy</button>
+        <button onclick="downloadSql()">Pobierz SQL</button>
+        <button onclick="closeSqlPreview()">Anuluj</button>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
